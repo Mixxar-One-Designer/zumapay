@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Bell, 
@@ -12,13 +13,115 @@ import {
   Award,
   Sparkles,
   Shield,
-  ArrowLeftRight
+  ArrowLeftRight,
+  LogOut,
+  Wallet,
+  Copy,
+  Check
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 import { useExchangeRate } from '../../hooks/useExchangeRate';
+import { generateUserAddresses } from '@/lib/walletGenerator';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { rate, loading } = useExchangeRate();
+  const { rate, loading: rateLoading } = useExchangeRate();
+  const [user, setUser] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
+  const [balance, setBalance] = useState<any>(null);
+  const [wallets, setWallets] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [copied, setCopied] = useState<string | null>(null);
+  const [showWallet, setShowWallet] = useState(false);
+
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  const checkUser = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        router.push('/');
+        return;
+      }
+      
+      setUser(user);
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .single();
+        
+      setProfile(profile);
+      
+      const { data: balance } = await supabase
+        .from('balances')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+        
+      setBalance(balance);
+      
+      const { data: existingWallets } = await supabase
+        .from('user_wallets')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (existingWallets) {
+        setWallets(existingWallets);
+      } else {
+        const addresses = generateUserAddresses(user.id);
+        
+        const { data: newWallets } = await supabase
+          .from('user_wallets')
+          .insert({
+            user_id: user.id,
+            trc20_address: addresses.trc20,
+            erc20_address: addresses.erc20,
+            bep20_address: addresses.bep20
+          })
+          .select()
+          .single();
+        
+        setWallets(newWallets);
+      }
+      
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    router.push('/');
+  };
+
+  const copyAddress = (address: string, type: string) => {
+    navigator.clipboard.writeText(address);
+    setCopied(type);
+    setTimeout(() => setCopied(null), 2000);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-[#1F1F1F] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#F6A100] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white">Loading your wallet...</p>
+        </div>
+      </div>
+    );
+  }
+
+  const usdtBalance = balance?.usdt_balance || 0;
+  const ngnValue = usdtBalance * rate;
 
   return (
     <div className="min-h-screen bg-[#1F1F1F] pb-20">
@@ -27,7 +130,7 @@ export default function Dashboard() {
         <div className="flex justify-between items-center mb-4">
           <div className="flex items-center gap-2">
             <div className="p-2 bg-[#F6A100] rounded-xl">
-              <span className="text-[#1F1F1F] text-xl">💰</span>
+              <Wallet className="text-[#1F1F1F]" size={24} />
             </div>
             <span className="text-2xl font-bold">
               <span className="text-white">Zuma</span>
@@ -41,13 +144,18 @@ export default function Dashboard() {
             <button onClick={() => router.push('/profile')}>
               <User className="text-gray-400 hover:text-[#F6A100] transition-colors" size={20} />
             </button>
+            <button onClick={handleLogout}>
+              <LogOut className="text-gray-400 hover:text-red-500 transition-colors" size={20} />
+            </button>
           </div>
         </div>
 
         {/* Welcome Message */}
         <div className="mb-4 flex items-center gap-2 bg-[#2C2C2C] p-2 rounded-xl">
           <Sparkles className="text-[#F6A100]" size={16} />
-          <span className="text-gray-300 text-sm">Welcome back, Ibraheem!</span>
+          <span className="text-gray-300 text-sm">
+            Welcome back, {profile?.full_name || 'User'}!
+          </span>
           <Shield className="text-green-500 ml-auto" size={14} />
         </div>
 
@@ -59,10 +167,10 @@ export default function Dashboard() {
           </div>
           <div className="flex justify-between items-end">
             <div>
-              <span className="text-4xl font-bold text-white">100.00</span>
+              <span className="text-4xl font-bold text-white">{usdtBalance.toFixed(2)}</span>
               <span className="text-[#F6A100] ml-2 font-semibold">USDT</span>
             </div>
-            <span className="text-xl text-gray-300">₦160,000</span>
+            <span className="text-xl text-gray-300">₦{ngnValue.toFixed(2)}</span>
           </div>
         </div>
 
@@ -77,7 +185,7 @@ export default function Dashboard() {
                 <span className="text-gray-400 text-sm">Live Exchange Rate</span>
                 <div className="flex items-center gap-2">
                   <span className="text-white font-bold">1 USDT = ₦{rate.toLocaleString()}</span>
-                  {loading && <RefreshCw size={12} className="text-gray-400 animate-spin" />}
+                  {rateLoading && <RefreshCw size={12} className="text-gray-400 animate-spin" />}
                 </div>
               </div>
             </div>
@@ -86,6 +194,72 @@ export default function Dashboard() {
             </span>
           </div>
         </div>
+
+        {/* Quick Wallet Access */}
+        {wallets && (
+          <div className="mb-4">
+            <button
+              onClick={() => setShowWallet(!showWallet)}
+              className="w-full bg-[#2C2C2C] rounded-xl p-3 flex items-center justify-between border border-gray-800 hover:border-[#F6A100] transition-all"
+            >
+              <div className="flex items-center gap-2">
+                <Wallet className="text-[#F6A100]" size={18} />
+                <span className="text-white text-sm">Your Permanent Deposit Addresses</span>
+              </div>
+              <span className="text-[#F6A100] text-sm">{showWallet ? 'Hide' : 'Show'}</span>
+            </button>
+            
+            <AnimatePresence>
+              {showWallet && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="mt-2 bg-[#2C2C2C] rounded-xl p-4 border border-gray-800 overflow-hidden"
+                >
+                  <div className="space-y-4">
+                    <div className="bg-[#1F1F1F] p-3 rounded-xl">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[#F6A100] text-xs font-semibold">TRC20 (Recommended - Low Fees)</span>
+                        <button onClick={() => copyAddress(wallets.trc20_address, 'trc20')}>
+                          {copied === 'trc20' ? <Check size={16} className="text-green-500" /> : <Copy size={16} className="text-gray-400" />}
+                        </button>
+                      </div>
+                      <p className="text-white text-sm font-mono break-all">{wallets.trc20_address}</p>
+                    </div>
+                    
+                    <div className="bg-[#1F1F1F] p-3 rounded-xl">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[#F6A100] text-xs font-semibold">ERC20 (Higher Fees)</span>
+                        <button onClick={() => copyAddress(wallets.erc20_address, 'erc20')}>
+                          {copied === 'erc20' ? <Check size={16} className="text-green-500" /> : <Copy size={16} className="text-gray-400" />}
+                        </button>
+                      </div>
+                      <p className="text-white text-sm font-mono break-all">{wallets.erc20_address}</p>
+                    </div>
+                    
+                    <div className="bg-[#1F1F1F] p-3 rounded-xl">
+                      <div className="flex justify-between items-center mb-2">
+                        <span className="text-[#F6A100] text-xs font-semibold">BEP20 (Binance Chain)</span>
+                        <button onClick={() => copyAddress(wallets.bep20_address, 'bep20')}>
+                          {copied === 'bep20' ? <Check size={16} className="text-green-500" /> : <Copy size={16} className="text-gray-400" />}
+                        </button>
+                      </div>
+                      <p className="text-white text-sm font-mono break-all">{wallets.bep20_address}</p>
+                    </div>
+                    
+                    <div className="border border-yellow-500 rounded-lg p-3 mt-2">
+                      <p className="text-yellow-500 text-xs">⚠️ Send ONLY USDT to these addresses. Using wrong network may result in loss.</p>
+                    </div>
+                    
+                    <p className="text-gray-500 text-xs text-center">✨ These are your permanent addresses. Save them for future deposits.</p>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       {/* Quick Actions Section */}
@@ -95,68 +269,43 @@ export default function Dashboard() {
           Quick Actions
         </h2>
         
-        {/* Action Grid - 3x2 with Emojis */}
         <div className="grid grid-cols-3 gap-3 mb-6">
-          {/* Deposit Cash */}
-          <button
-            onClick={() => router.push('/deposit/cash')}
-            className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all"
-          >
+          <button onClick={() => router.push('/deposit/cash')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
               <span className="text-[#F6A100] text-2xl">💵</span>
             </div>
             <span className="text-xs text-white text-center">Deposit Cash</span>
           </button>
 
-          {/* Deposit Crypto */}
-          <button
-            onClick={() => router.push('/deposit/crypto')}
-            className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all"
-          >
+          <button onClick={() => router.push('/deposit/crypto')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
-              <span className="text-[#F6A100] text-2xl">💲</span>
+              <span className="text-[#F6A100] text-2xl">🪙</span>
             </div>
             <span className="text-xs text-white text-center">Deposit Crypto</span>
           </button>
 
-          {/* Buy Crypto */}
-          <button
-            onClick={() => router.push('/buy')}
-            className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all"
-          >
+          <button onClick={() => router.push('/buy')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
               <span className="text-[#F6A100] text-2xl">🛒</span>
             </div>
             <span className="text-xs text-white text-center">Buy Crypto</span>
           </button>
 
-          {/* Withdraw Cash */}
-          <button
-            onClick={() => router.push('/withdraw/cash')}
-            className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all"
-          >
+          <button onClick={() => router.push('/withdraw/cash')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
               <span className="text-[#F6A100] text-2xl">🏦</span>
             </div>
             <span className="text-xs text-white text-center">Withdraw Cash</span>
           </button>
 
-          {/* Withdraw Crypto */}
-          <button
-            onClick={() => router.push('/withdraw/crypto')}
-            className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all"
-          >
+          <button onClick={() => router.push('/withdraw/crypto')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
-              <span className="text-[#F6A100] text-2xl">📥</span>
+              <span className="text-[#F6A100] text-2xl">₿</span>
             </div>
             <span className="text-xs text-white text-center">Withdraw Crypto</span>
           </button>
 
-          {/* History */}
-          <button
-            onClick={() => router.push('/history')}
-            className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all"
-          >
+          <button onClick={() => router.push('/history')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
               <span className="text-[#F6A100] text-2xl">📜</span>
             </div>
@@ -164,11 +313,7 @@ export default function Dashboard() {
           </button>
         </div>
 
-        {/* Convert Card */}
-        <div 
-          onClick={() => router.push('/convert')}
-          className="bg-[#2C2C2C] rounded-xl p-5 mb-4 border border-gray-800 hover:border-[#F6A100] transition-all cursor-pointer"
-        >
+        <div onClick={() => router.push('/convert')} className="bg-[#2C2C2C] rounded-xl p-5 mb-4 border border-gray-800 hover:border-[#F6A100] transition-all cursor-pointer">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-[#F6A100] rounded-xl">
@@ -183,11 +328,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Withdraw Cash Card - ONLY ONE BOTTOM CARD */}
-        <div 
-          onClick={() => router.push('/withdraw/cash')}
-          className="bg-[#2C2C2C] rounded-xl p-5 mb-4 border border-gray-800 hover:border-[#F6A100] transition-all cursor-pointer"
-        >
+        <div onClick={() => router.push('/withdraw/cash')} className="bg-[#2C2C2C] rounded-xl p-5 mb-4 border border-gray-800 hover:border-[#F6A100] transition-all cursor-pointer">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-[#F6A100] rounded-xl">
@@ -202,11 +343,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Transaction History Card */}
-        <div 
-          onClick={() => router.push('/history')}
-          className="bg-[#2C2C2C] rounded-xl p-5 mb-4 border border-gray-800 hover:border-[#F6A100] transition-all cursor-pointer"
-        >
+        <div onClick={() => router.push('/history')} className="bg-[#2C2C2C] rounded-xl p-5 mb-4 border border-gray-800 hover:border-[#F6A100] transition-all cursor-pointer">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-[#F6A100] rounded-xl">
@@ -220,83 +357,30 @@ export default function Dashboard() {
             <span className="text-[#F6A100] text-sm">View →</span>
           </div>
         </div>
-
-        {/* Recent Activity Preview */}
-        <div className="mt-6">
-          <div className="flex justify-between items-center mb-3">
-            <h3 className="text-white font-semibold flex items-center gap-2">
-              <Clock size={16} className="text-[#F6A100]" />
-              Recent Activity
-            </h3>
-            <button 
-              onClick={() => router.push('/history')}
-              className="text-[#F6A100] text-sm hover:underline"
-            >
-              View All
-            </button>
-          </div>
-          
-          <div className="bg-[#2C2C2C] rounded-xl p-4 border border-gray-800">
-            <div className="flex items-center justify-between py-2 border-b border-gray-700">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-500 bg-opacity-20 rounded-full">
-                  <span className="text-green-500 text-lg">💵</span>
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">Deposit</p>
-                  <p className="text-gray-400 text-xs">Today, 10:42 AM</p>
-                </div>
-              </div>
-              <p className="text-green-500 font-semibold">+50 USDT</p>
-            </div>
-            
-            <div className="flex items-center justify-between py-2">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-red-500 bg-opacity-20 rounded-full">
-                  <span className="text-red-500 text-lg">🏦</span>
-                </div>
-                <div>
-                  <p className="text-white text-sm font-medium">Withdrawal</p>
-                  <p className="text-gray-400 text-xs">Yesterday, 6:20 PM</p>
-                </div>
-              </div>
-              <p className="text-red-500 font-semibold">-30 USDT</p>
-            </div>
-          </div>
-        </div>
       </div>
 
-      {/* Bottom Navigation */}
+      {/* Bottom Navigation - WITHOUT Admin Button */}
       <div className="fixed bottom-0 left-0 right-0 bg-[#2C2C2C] border-t border-gray-800 p-3 pb-6">
         <div className="flex justify-around items-center max-w-md mx-auto">
-          <button 
-            onClick={() => router.push('/dashboard')}
-            className="flex flex-col items-center group"
-          >
-            <div className="p-2 bg-[#F6A100] bg-opacity-20 rounded-xl group-hover:bg-opacity-30 transition-all">
+          <button onClick={() => router.push('/dashboard')} className="flex flex-col items-center group">
+            <div className="p-2 bg-[#F6A100] bg-opacity-20 rounded-xl">
               <Home className="text-[#F6A100]" size={20} />
             </div>
-            <span className="text-xs mt-1 text-[#F6A100] font-medium">Home</span>
+            <span className="text-xs mt-1 text-[#F6A100]">Home</span>
           </button>
           
-          <button 
-            onClick={() => router.push('/support')}
-            className="flex flex-col items-center group"
-          >
-            <div className="p-2 bg-gray-800 rounded-xl group-hover:bg-[#F6A100] group-hover:bg-opacity-20 transition-all">
+          <button onClick={() => router.push('/support')} className="flex flex-col items-center group">
+            <div className="p-2 bg-gray-800 rounded-xl">
               <HelpCircle className="text-gray-400 group-hover:text-[#F6A100]" size={20} />
             </div>
-            <span className="text-xs mt-1 text-gray-400 group-hover:text-[#F6A100]">Support</span>
+            <span className="text-xs mt-1 text-gray-400">Support</span>
           </button>
           
-          <button 
-            onClick={() => router.push('/profile')}
-            className="flex flex-col items-center group"
-          >
-            <div className="p-2 bg-gray-800 rounded-xl group-hover:bg-[#F6A100] group-hover:bg-opacity-20 transition-all">
+          <button onClick={() => router.push('/profile')} className="flex flex-col items-center group">
+            <div className="p-2 bg-gray-800 rounded-xl">
               <User className="text-gray-400 group-hover:text-[#F6A100]" size={20} />
             </div>
-            <span className="text-xs mt-1 text-gray-400 group-hover:text-[#F6A100]">Profile</span>
+            <span className="text-xs mt-1 text-gray-400">Profile</span>
           </button>
         </div>
       </div>

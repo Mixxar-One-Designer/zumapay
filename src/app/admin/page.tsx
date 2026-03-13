@@ -13,6 +13,7 @@ import {
   LogOut,
   ChevronRight,
   CheckCircle,
+  Award,
   Bell,
   Moon,
   Globe,
@@ -46,6 +47,7 @@ export default function Profile() {
     
     setUser(user);
     
+    // Get profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('*')
@@ -54,6 +56,7 @@ export default function Profile() {
       
     setProfile(profile);
     
+    // Get balance
     const { data: balance } = await supabase
       .from('balances')
       .select('*')
@@ -93,6 +96,7 @@ export default function Profile() {
 
   return (
     <div className="min-h-screen bg-[#1F1F1F] pb-20">
+      {/* Header */}
       <div className="p-6 flex items-center gap-4 border-b border-gray-800">
         <button onClick={() => router.back()}>
           <ArrowLeft className="text-white" size={24} />
@@ -100,8 +104,10 @@ export default function Profile() {
         <h1 className="text-xl font-bold flex-1">Profile</h1>
       </div>
 
+      {/* Profile Header */}
       <div className="p-6 border-b border-gray-800">
         <div className="flex items-center gap-4">
+          {/* Avatar with initials */}
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F6A100] to-[#F6A100]/70 flex items-center justify-center text-white text-3xl font-bold border-2 border-[#F6A100]">
             {profile?.full_name?.charAt(0) || user?.email?.charAt(0).toUpperCase() || 'U'}
           </div>
@@ -124,6 +130,7 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="p-6 grid grid-cols-2 gap-3">
         <div className="bg-[#2C2C2C] rounded-xl p-4 border border-gray-800">
           <Wallet className="text-[#F6A100] mb-2" size={20} />
@@ -137,6 +144,7 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* User ID Card */}
       <div className="px-6 mb-6">
         <div className="bg-[#2C2C2C] rounded-xl p-4 border border-gray-800">
           <div className="flex justify-between items-center mb-2">
@@ -150,7 +158,9 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Menu Sections */}
       <div className="px-6 space-y-6">
+        {/* Account Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Account</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
@@ -186,6 +196,7 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Security Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Security</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
@@ -218,6 +229,7 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Preferences Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Preferences</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
@@ -256,6 +268,7 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Support Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Support</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
@@ -277,6 +290,7 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Logout Button */}
         <button
           onClick={() => setShowLogoutConfirm(true)}
           className="w-full bg-red-500 bg-opacity-10 border border-red-500 rounded-xl p-4 flex items-center justify-center gap-2 text-red-500 font-semibold hover:bg-opacity-20 transition-all mt-6"
@@ -290,6 +304,7 @@ export default function Profile() {
         </p>
       </div>
 
+      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
           <div className="bg-[#2C2C2C] rounded-2xl p-6 w-full max-w-sm border border-gray-800">
