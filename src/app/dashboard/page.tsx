@@ -279,7 +279,7 @@ export default function Dashboard() {
 
           <button onClick={() => router.push('/deposit/crypto')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
-              <span className="text-[#F6A100] text-2xl">🪙</span>
+              <span className="text-[#F6A100] text-2xl">💲</span>
             </div>
             <span className="text-xs text-white text-center">Deposit Crypto</span>
           </button>
@@ -300,7 +300,7 @@ export default function Dashboard() {
 
           <button onClick={() => router.push('/withdraw/crypto')} className="bg-[#2C2C2C] rounded-xl p-4 flex flex-col items-center gap-2 border border-gray-800 hover:border-[#F6A100] transition-all">
             <div className="w-12 h-12 bg-[#F6A100] bg-opacity-20 rounded-full flex items-center justify-center">
-              <span className="text-[#F6A100] text-2xl">₿</span>
+              <span className="text-[#F6A100] text-2xl">📤</span>
             </div>
             <span className="text-xs text-white text-center">Withdraw Crypto</span>
           </button>
