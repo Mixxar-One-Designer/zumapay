@@ -11,6 +11,7 @@ export default function PhoneNumber() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentPhone, setCurrentPhone] = useState('');
 
   useEffect(() => {
     loadPhone();
@@ -18,8 +19,9 @@ export default function PhoneNumber() {
 
   const loadPhone = async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user?.phone) {
-      setPhone(user.phone);
+    if (user?.user_metadata?.phone) {
+      setPhone(user.user_metadata.phone);
+      setCurrentPhone(user.user_metadata.phone);
     }
   };
 
@@ -30,16 +32,27 @@ export default function PhoneNumber() {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        phone: phone
+      // Simple validation
+      if (!phone || phone.length < 10) {
+        throw new Error('Please enter a valid phone number');
+      }
+
+      // Update phone in user metadata
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: { phone: phone }
       });
 
-      if (error) throw error;
+      if (updateError) throw updateError;
 
       setSuccess('Phone number updated successfully!');
+      setCurrentPhone(phone);
+      
+      // Clear success message after 2 seconds
       setTimeout(() => {
+        setSuccess('');
         router.push('/profile');
       }, 2000);
+      
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -48,53 +61,107 @@ export default function PhoneNumber() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1F1F1F] pb-24">
-      <div className="p-6 flex items-center gap-4 border-b border-gray-800">
+    <div className="min-h-screen p-6" style={{ backgroundColor: 'var(--bg-primary)' }}>
+      <div className="flex items-center gap-4 mb-6">
         <button onClick={() => router.back()}>
-          <ArrowLeft className="text-white" size={24} />
+          <ArrowLeft style={{ color: 'var(--text-primary)' }} size={24} />
         </button>
-        <h1 className="text-xl font-bold flex-1">Phone Number</h1>
+        <h1 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>Phone Number</h1>
       </div>
 
-      <div className="p-6">
-        {error && (
-          <div className="bg-red-500 bg-opacity-10 border border-red-500 rounded-xl p-4 mb-4 flex gap-2">
-            <AlertCircle className="text-red-500 flex-shrink-0" size={18} />
-            <p className="text-red-500 text-sm">{error}</p>
-          </div>
-        )}
+      {/* Current Phone Display */}
+      {currentPhone && (
+        <div className="mb-4 p-4 rounded-xl" style={{ 
+          backgroundColor: 'var(--bg-card)', 
+          border: '1px solid var(--border)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px'
+        }}>
+          <Phone size={18} style={{ color: 'var(--text-secondary)' }} />
+          <span style={{ color: 'var(--text-secondary)' }}>Current: </span>
+          <span style={{ color: '#F6A100', fontWeight: '500' }}>{currentPhone}</span>
+        </div>
+      )}
 
-        {success && (
-          <div className="bg-green-500 bg-opacity-10 border border-green-500 rounded-xl p-4 mb-4 flex gap-2">
-            <Check className="text-green-500 flex-shrink-0" size={18} />
-            <p className="text-green-500 text-sm">{success}</p>
-          </div>
-        )}
+      {/* Error Message */}
+      {error && (
+        <div className="mb-4 p-4 rounded-xl" style={{ 
+          backgroundColor: 'rgba(239, 68, 68, 0.1)', 
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          color: '#ef4444'
+        }}>
+          <AlertCircle size={18} />
+          {error}
+        </div>
+      )}
 
-        <form onSubmit={handleSubmit} className="bg-[#2C2C2C] rounded-xl p-5 border border-gray-800 space-y-4">
-          <div>
-            <label className="text-gray-400 text-sm mb-2 block">Phone Number</label>
-            <div className="relative">
-              <Phone className="absolute left-3 top-3 text-gray-400" size={18} />
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="+234 800 000 0000"
-                className="w-full bg-[#1F1F1F] text-white rounded-xl p-3 pl-10 outline-none focus:ring-1 focus:ring-[#F6A100]"
-              />
-            </div>
-          </div>
+      {/* Success Message */}
+      {success && (
+        <div className="mb-4 p-4 rounded-xl" style={{ 
+          backgroundColor: 'rgba(34, 197, 94, 0.1)', 
+          border: '1px solid rgba(34, 197, 94, 0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          color: '#22c55e'
+        }}>
+          <Check size={18} />
+          {success}
+        </div>
+      )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-[#F6A100] text-[#1F1F1F] font-semibold py-3 rounded-xl hover:bg-opacity-90 transition-all mt-4"
-          >
-            {loading ? 'Updating...' : 'Update Phone Number'}
-          </button>
-        </form>
-      </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div>
+          <label className="text-sm mb-2 block" style={{ color: 'var(--text-secondary)' }}>
+            Phone Number
+          </label>
+          <div className="relative">
+            <Phone size={18} style={{ 
+              position: 'absolute', 
+              left: '12px', 
+              top: '14px', 
+              color: 'var(--text-secondary)' 
+            }} />
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="08012345678"
+              className="w-full rounded-xl p-3 pl-10 outline-none focus:ring-1 focus:ring-[#F6A100]"
+              style={{ 
+                backgroundColor: 'var(--bg-card)', 
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border)'
+              }}
+            />
+          </div>
+          <p className="text-xs mt-2" style={{ color: 'var(--text-secondary)' }}>
+            Enter Nigerian number (e.g., 08012345678)
+          </p>
+        </div>
+
+        <button
+          type="submit"
+          disabled={loading}
+          style={{
+            width: '100%',
+            backgroundColor: '#F6A100',
+            color: '#1F1F1F',
+            padding: '14px',
+            borderRadius: '12px',
+            fontWeight: '600',
+            border: 'none',
+            cursor: loading ? 'not-allowed' : 'pointer',
+            opacity: loading ? 0.5 : 1
+          }}
+        >
+          {loading ? 'Updating...' : 'Update Phone Number'}
+        </button>
+      </form>
     </div>
   );
 }

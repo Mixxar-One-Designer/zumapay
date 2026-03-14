@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
-import BottomNav from "./components/BottomNav"; // Changed from @/components/BottomNav
+import BottomNav from "./components/BottomNav";
+import { ThemeProvider } from "./ThemeProvider";
+import { SettingsProvider } from "./SettingsProvider";
 import "./globals.css";
 
 const poppins = Poppins({ 
@@ -22,8 +24,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.variable} antialiased`}>
-        {children}
-        <BottomNav />
+        <ThemeProvider>
+          <SettingsProvider>
+            {children}
+            <BottomNav />
+          </SettingsProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

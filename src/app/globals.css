@@ -1,13 +1,52 @@
 @import "tailwindcss";
 
 :root {
-  --background: #1F1F1F;
-  --foreground: #ffffff;
-  --accent: #F6A100;
+  --bg-primary: #1F1F1F;
+  --bg-card: #2C2C2C;
+  --text-primary: #ffffff;
+  --text-secondary: #9CA3AF;
+  --border: #374151;
+}
+
+:root.light {
+  --bg-primary: #F8F9FA;
+  --bg-card: #FFFFFF;
+  --text-primary: #1F2A3A;
+  --text-secondary: #6B7280;
+  --border: #E9ECF0;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-poppins), system-ui, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  transition: all 0.2s ease;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Override all hardcoded colors */
+.bg-\[\#1F1F1F\] {
+  background-color: var(--bg-primary) !important;
+}
+
+.bg-\[\#2C2C2C\] {
+  background-color: var(--bg-card) !important;
+}
+
+.text-white {
+  color: var(--text-primary) !important;
+}
+
+.text-gray-400 {
+  color: var(--text-secondary) !important;
+}
+
+.border-gray-800 {
+  border-color: var(--border) !important;
+}
+
+.fixed.bottom-0 {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border) !important;
 }

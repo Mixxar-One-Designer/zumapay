@@ -37,6 +37,9 @@ export default function Dashboard() {
     checkUser();
   }, []);
 
+  const theme = typeof window !== 'undefined' ? document.documentElement.classList.contains('light') ? 'light' : 'dark' : 'dark';
+console.log('Dashboard theme:', theme);
+
   const checkUser = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
