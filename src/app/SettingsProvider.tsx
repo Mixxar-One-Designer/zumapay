@@ -19,13 +19,13 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
   useEffect(() => {
-    const savedLang = localStorage.getItem('language') || 'English';
+    const savedLang = localStorage.getItem('language');
     const savedNotif = localStorage.getItem('notifications');
     const saved2FA = localStorage.getItem('twoFactorEnabled');
     
-    setLanguage(savedLang);
-    setNotifications(savedNotif === null ? true : savedNotif === 'true');
-    setTwoFactorEnabled(saved2FA === 'true');
+    if (savedLang) setLanguage(savedLang);
+    if (savedNotif) setNotifications(savedNotif === 'true');
+    if (saved2FA) setTwoFactorEnabled(saved2FA === 'true');
   }, []);
 
   const handleSetLanguage = (lang: string) => {

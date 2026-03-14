@@ -357,6 +357,7 @@ export const translations = {
     balance: 'Itule',
     welcomeBack: 'Nnọọ',
   },
-};
+} as const;
 
 export type Language = keyof typeof translations;
+export type TranslationKey = keyof typeof translations.English;

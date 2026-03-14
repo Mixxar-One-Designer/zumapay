@@ -2,23 +2,24 @@
 
 import { useRouter, usePathname } from 'next/navigation';
 import { Home, History, HelpCircle, User } from 'lucide-react';
+import { useTranslation } from '@/hooks/useTranslation';
 
 export default function BottomNav() {
   const router = useRouter();
   const pathname = usePathname();
+  const { t } = useTranslation();
 
-  // Don't show bottom nav on login page
   if (pathname === '/') return null;
 
   const navItems = [
-    { icon: Home, label: 'Home', path: '/dashboard' },
-    { icon: History, label: 'History', path: '/history' },
-    { icon: HelpCircle, label: 'Help', path: '/support' },
-    { icon: User, label: 'Profile', path: '/profile' },
+    { icon: Home, label: t('home'), path: '/dashboard' },
+    { icon: History, label: t('history'), path: '/history' },
+    { icon: HelpCircle, label: t('support'), path: '/support' },
+    { icon: User, label: t('profile'), path: '/profile' },
   ];
 
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-[#2C2C2C] border-t border-gray-800 p-2 pb-6 z-50">
+    <div className="fixed bottom-0 left-0 right-0 p-2 pb-6 z-50" style={{ backgroundColor: 'var(--bg-card)', borderTop: '1px solid var(--border)' }}>
       <div className="flex justify-around items-center max-w-md mx-auto">
         {navItems.map((item) => {
           const IconComponent = item.icon;
@@ -34,9 +35,6 @@ export default function BottomNav() {
             >
               <IconComponent size={22} />
               <span className="text-xs mt-1">{item.label}</span>
-              {isActive && (
-                <div className="w-1 h-1 bg-[#F6A100] rounded-full mt-1"></div>
-              )}
             </button>
           );
         })}
