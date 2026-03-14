@@ -121,8 +121,8 @@ export default function Profile() {
             </div>
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{user?.email}</p>
             <div className="flex items-center gap-2 mt-2">
-              <div className="bg-green-500 bg-opacity-20 rounded-full px-2 py-0.5">
-                <span className="text-green-500 text-xs">{t('verified')}</span>
+              <div style={{ backgroundColor: 'rgba(34, 197, 94, 0.1)' }} className="rounded-full px-2 py-0.5">
+                <span style={{ color: '#22c55e' }} className="text-xs font-medium">{t('verified')}</span>
               </div>
               <div className="rounded-full px-2 py-0.5" style={{ backgroundColor: 'var(--bg-card)' }}>
                 <span style={{ color: 'var(--text-secondary)' }} className="text-xs">{t('memberSince')} {formatDate(user?.created_at)}</span>
@@ -191,7 +191,8 @@ export default function Profile() {
             {/* Phone Number */}
             <button 
               onClick={() => router.push('/profile/phone')}
-              className="w-full flex items-center justify-between p-4 hover:opacity-80 transition-all"
+              className="w-full flex items-center justify-between p-4 border-b hover:opacity-80 transition-all"
+              style={{ borderColor: 'var(--border)' }}
             >
               <div className="flex items-center gap-3">
                 <Phone size={18} style={{ color: 'var(--text-secondary)' }} />
@@ -201,6 +202,21 @@ export default function Profile() {
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {user?.user_metadata?.phone || t('notAdded')}
                 </span>
+                <ChevronRight size={16} style={{ color: 'var(--text-secondary)' }} />
+              </div>
+            </button>
+
+            {/* KYC Verification - ADDED BACK */}
+            <button 
+              onClick={() => router.push('/profile/kyc')}
+              className="w-full flex items-center justify-between p-4 hover:opacity-80 transition-all"
+            >
+              <div className="flex items-center gap-3">
+                <Shield size={18} style={{ color: 'var(--text-secondary)' }} />
+                <span style={{ color: 'var(--text-primary)' }}>KYC Verification</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs" style={{ color: '#22c55e' }}>Verified</span>
                 <ChevronRight size={16} style={{ color: 'var(--text-secondary)' }} />
               </div>
             </button>

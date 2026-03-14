@@ -154,8 +154,8 @@ export default function Dashboard() {
         <div className="mb-4 flex items-center gap-2 p-2 rounded-xl" style={{ backgroundColor: 'var(--bg-card)' }}>
           <Sparkles className="text-[#F6A100]" size={16} />
           <span style={{ color: 'var(--text-secondary)' }} className="text-sm">
-  {t('welcomeBack')}, {profile?.full_name || 'User'}!
-</span>
+            {t('welcomeBack')}, {profile?.full_name || 'User'}!
+          </span>
           <Shield className="text-green-500 ml-auto" size={14} />
         </div>
 
@@ -174,12 +174,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Live Exchange Rate */}
+        {/* Live Exchange Rate - FIXED with black icon on gold */}
         <div className="rounded-xl p-4 border mb-2" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-[#F6A100] bg-opacity-20 rounded-lg">
-                <TrendingUp size={18} className="text-[#F6A100]" />
+              <div className="p-2 bg-[#F6A100] rounded-lg">
+                <TrendingUp size={18} className="text-[#1F1F1F]" />
               </div>
               <div>
                 <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('liveExchangeRate')}</span>
@@ -189,9 +189,9 @@ export default function Dashboard() {
                 </div>
               </div>
             </div>
-            <span className="text-xs text-green-500 bg-green-500 bg-opacity-20 px-2 py-1 rounded-full">
-              +0.2%
-            </span>
+           <span className="text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
+  +0.2%
+</span>
           </div>
         </div>
 
