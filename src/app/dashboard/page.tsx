@@ -5,8 +5,6 @@ import { useRouter } from 'next/navigation';
 import { 
   Bell, 
   User, 
-  Home, 
-  HelpCircle,
   TrendingUp,
   RefreshCw,
   Clock,
@@ -124,7 +122,7 @@ export default function Dashboard() {
   const ngnValue = usdtBalance * rate;
 
   return (
-    <div className="min-h-screen bg-[#1F1F1F] pb-20">
+    <div className="min-h-screen bg-[#1F1F1F] pb-24">
       {/* Header */}
       <div className="p-6">
         <div className="flex justify-between items-center mb-4">
@@ -356,32 +354,6 @@ export default function Dashboard() {
             </div>
             <span className="text-[#F6A100] text-sm">View →</span>
           </div>
-        </div>
-      </div>
-
-      {/* Bottom Navigation - WITHOUT Admin Button */}
-      <div className="fixed bottom-0 left-0 right-0 bg-[#2C2C2C] border-t border-gray-800 p-3 pb-6">
-        <div className="flex justify-around items-center max-w-md mx-auto">
-          <button onClick={() => router.push('/dashboard')} className="flex flex-col items-center group">
-            <div className="p-2 bg-[#F6A100] bg-opacity-20 rounded-xl">
-              <Home className="text-[#F6A100]" size={20} />
-            </div>
-            <span className="text-xs mt-1 text-[#F6A100]">Home</span>
-          </button>
-          
-          <button onClick={() => router.push('/support')} className="flex flex-col items-center group">
-            <div className="p-2 bg-gray-800 rounded-xl">
-              <HelpCircle className="text-gray-400 group-hover:text-[#F6A100]" size={20} />
-            </div>
-            <span className="text-xs mt-1 text-gray-400">Support</span>
-          </button>
-          
-          <button onClick={() => router.push('/profile')} className="flex flex-col items-center group">
-            <div className="p-2 bg-gray-800 rounded-xl">
-              <User className="text-gray-400 group-hover:text-[#F6A100]" size={20} />
-            </div>
-            <span className="text-xs mt-1 text-gray-400">Profile</span>
-          </button>
         </div>
       </div>
     </div>

@@ -92,7 +92,8 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-[#1F1F1F] pb-20">
+    <div className="min-h-screen bg-[#1F1F1F] pb-24">
+      {/* Header */}
       <div className="p-6 flex items-center gap-4 border-b border-gray-800">
         <button onClick={() => router.back()}>
           <ArrowLeft className="text-white" size={24} />
@@ -100,6 +101,7 @@ export default function Profile() {
         <h1 className="text-xl font-bold flex-1">Profile</h1>
       </div>
 
+      {/* Profile Header */}
       <div className="p-6 border-b border-gray-800">
         <div className="flex items-center gap-4">
           <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#F6A100] to-[#F6A100]/70 flex items-center justify-center text-white text-3xl font-bold border-2 border-[#F6A100]">
@@ -124,6 +126,7 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Stats Cards */}
       <div className="p-6 grid grid-cols-2 gap-3">
         <div className="bg-[#2C2C2C] rounded-xl p-4 border border-gray-800">
           <Wallet className="text-[#F6A100] mb-2" size={20} />
@@ -137,6 +140,7 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* User ID Card */}
       <div className="px-6 mb-6">
         <div className="bg-[#2C2C2C] rounded-xl p-4 border border-gray-800">
           <div className="flex justify-between items-center mb-2">
@@ -150,11 +154,17 @@ export default function Profile() {
         </div>
       </div>
 
+      {/* Menu Sections */}
       <div className="px-6 space-y-6">
+        {/* Account Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Account</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
-            <button className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all">
+            {/* Personal Information */}
+            <button 
+              onClick={() => router.push('/profile/personal')}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <User size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Personal Information</span>
@@ -162,34 +172,43 @@ export default function Profile() {
               <ChevronRight size={16} className="text-gray-400" />
             </button>
             
-            <button className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all">
+            {/* Email (non-clickable) */}
+            <div className="w-full flex items-center justify-between p-4 border-b border-gray-800">
               <div className="flex items-center gap-3">
                 <Mail size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Email Address</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-gray-400 text-xs">{user?.email}</span>
-                <ChevronRight size={16} className="text-gray-400" />
               </div>
-            </button>
+            </div>
             
-            <button className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all">
+            {/* Phone Number */}
+            <button 
+              onClick={() => router.push('/profile/phone')}
+              className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Phone size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Phone Number</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-gray-400 text-xs">Not added</span>
+                <span className="text-gray-400 text-xs">{user?.phone || 'Not added'}</span>
                 <ChevronRight size={16} className="text-gray-400" />
               </div>
             </button>
           </div>
         </div>
 
+        {/* Security Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Security</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
-            <button className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all">
+            {/* Change Password */}
+            <button 
+              onClick={() => router.push('/profile/password')}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Lock size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Change Password</span>
@@ -197,7 +216,11 @@ export default function Profile() {
               <ChevronRight size={16} className="text-gray-400" />
             </button>
             
-            <button className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all">
+            {/* Two-Factor Authentication */}
+            <button 
+              onClick={() => router.push('/profile/two-factor')}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Shield size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Two-Factor Authentication</span>
@@ -208,7 +231,11 @@ export default function Profile() {
               </div>
             </button>
             
-            <button className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all">
+            {/* Login Activity */}
+            <button 
+              onClick={() => router.push('/profile/activity')}
+              className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Calendar size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Login Activity</span>
@@ -218,10 +245,15 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Preferences Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Preferences</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
-            <button className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all">
+            {/* Notifications */}
+            <button 
+              onClick={() => router.push('/profile/notifications')}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Bell size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Notifications</span>
@@ -232,7 +264,11 @@ export default function Profile() {
               </div>
             </button>
             
-            <button className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all">
+            {/* Dark Mode */}
+            <button 
+              onClick={() => router.push('/profile/darkmode')}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Moon size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Dark Mode</span>
@@ -243,7 +279,11 @@ export default function Profile() {
               </div>
             </button>
             
-            <button className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all">
+            {/* Language */}
+            <button 
+              onClick={() => router.push('/profile/language')}
+              className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Globe size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Language</span>
@@ -256,10 +296,15 @@ export default function Profile() {
           </div>
         </div>
 
+        {/* Support Section */}
         <div>
           <h3 className="text-gray-400 text-xs font-semibold uppercase tracking-wider mb-2">Support</h3>
           <div className="bg-[#2C2C2C] rounded-xl border border-gray-800 overflow-hidden">
-            <button className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all">
+            {/* Help Center */}
+            <button 
+              onClick={() => router.push('/support')}
+              className="w-full flex items-center justify-between p-4 border-b border-gray-800 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <HelpCircle size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Help Center</span>
@@ -267,7 +312,11 @@ export default function Profile() {
               <ChevronRight size={16} className="text-gray-400" />
             </button>
             
-            <button className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all">
+            {/* Contact Support */}
+            <button 
+              onClick={() => router.push('/support')}
+              className="w-full flex items-center justify-between p-4 hover:bg-[#3C3C3C] transition-all"
+            >
               <div className="flex items-center gap-3">
                 <Mail size={18} className="text-gray-400" />
                 <span className="text-white text-sm">Contact Support</span>
@@ -277,19 +326,40 @@ export default function Profile() {
           </div>
         </div>
 
-        <button
-          onClick={() => setShowLogoutConfirm(true)}
-          className="w-full bg-red-500 bg-opacity-10 border border-red-500 rounded-xl p-4 flex items-center justify-center gap-2 text-red-500 font-semibold hover:bg-opacity-20 transition-all mt-6"
-        >
-          <LogOut size={18} />
-          Log Out
-        </button>
+        {/* LOGOUT BUTTON - 100% WORKING VERSION */}
+        <div className="mt-6 w-full">
+          <button
+            onClick={() => setShowLogoutConfirm(true)}
+            style={{
+              backgroundColor: '#dc2626',
+              color: 'white',
+              fontWeight: '600',
+              fontSize: '16px',
+              padding: '16px 24px',
+              borderRadius: '12px',
+              width: '100%',
+              border: 'none',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '8px',
+              transition: 'background-color 0.2s'
+            }}
+            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#b91c1c'}
+            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#dc2626'}
+          >
+            <LogOut size={18} color="white" />
+            Log Out
+          </button>
+        </div>
 
         <p className="text-center text-gray-500 text-xs py-4">
           Version 1.0.0
         </p>
       </div>
 
+      {/* Logout Confirmation Modal */}
       {showLogoutConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
           <div className="bg-[#2C2C2C] rounded-2xl p-6 w-full max-w-sm border border-gray-800">
