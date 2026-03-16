@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { formatUSDT, formatNGN } from '@/lib/format';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Bell, 
@@ -25,7 +26,7 @@ import { useTranslation } from '@/hooks/useTranslation';
 
 export default function Dashboard() {
   const router = useRouter();
-  const { rate, loading: rateLoading } = useExchangeRate();
+  const { rate, percentChange, loading: rateLoading } = useExchangeRate();
   const { t } = useTranslation();
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<any>(null);
@@ -34,10 +35,46 @@ export default function Dashboard() {
   const [authLoading, setAuthLoading] = useState(true);
   const [copied, setCopied] = useState<string | null>(null);
   const [showWallet, setShowWallet] = useState(false);
+  
+  // Track last balance update time
+  const lastBalanceUpdate = useRef<number>(Date.now());
 
   useEffect(() => {
     checkUser();
   }, []);
+
+  // AUTO-REFRESH BALANCE EVERY 30 SECONDS (not every render)
+  useEffect(() => {
+    if (!user) return;
+    
+    let mounted = true;
+    
+    const refreshBalance = async () => {
+      // Only refresh if at least 30 seconds have passed
+      if (Date.now() - lastBalanceUpdate.current < 29000) return;
+      
+      const { data: freshBalance } = await supabase
+        .from('balances')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (freshBalance && mounted) {
+        setBalance(freshBalance);
+        lastBalanceUpdate.current = Date.now();
+      }
+    };
+    
+    // Initial refresh
+    refreshBalance();
+    
+    const interval = setInterval(refreshBalance, 30000);
+    
+    return () => {
+      mounted = false;
+      clearInterval(interval);
+    };
+  }, [user]);
 
   const checkUser = async () => {
     try {
@@ -121,7 +158,6 @@ export default function Dashboard() {
   }
 
   const usdtBalance = balance?.usdt_balance || 0;
-  const ngnValue = usdtBalance * rate;
 
   return (
     <div className="min-h-screen pb-24" style={{ backgroundColor: 'var(--bg-primary)' }}>
@@ -162,19 +198,39 @@ export default function Dashboard() {
         {/* Balance Display */}
         <div className="mb-6 rounded-2xl p-5 border" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           <div className="flex justify-between items-start mb-3">
-            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('totalBalance')}</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Your Assets</span>
             <Award className="text-[#F6A100]" size={18} />
           </div>
-          <div className="flex justify-between items-end">
-            <div>
-              <span className="text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>{usdtBalance.toFixed(2)}</span>
-              <span className="text-[#F6A100] ml-2 font-semibold">USDT</span>
-            </div>
-            <span className="text-xl" style={{ color: 'var(--text-secondary)' }}>₦{ngnValue.toFixed(2)}</span>
+          
+          {/* USDT Balance */}
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>USDT</span>
+            <span className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              {formatUSDT(usdtBalance)} USDT
+            </span>
+          </div>
+          
+          {/* NGN Balance */}
+          <div className="flex justify-between items-center mb-3">
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>NGN</span>
+            <span className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+              {formatNGN(balance?.ngn_balance || 0)}
+            </span>
+          </div>
+          
+          {/* Divider */}
+          <div className="border-t border-gray-700 my-3"></div>
+          
+          {/* Total Value in NGN */}
+          <div className="flex justify-between items-center">
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Total Value (₦)</span>
+            <span className="text-xl font-bold text-[#F6A100]">
+              {formatNGN((usdtBalance * rate) + (balance?.ngn_balance || 0))}
+            </span>
           </div>
         </div>
 
-        {/* Live Exchange Rate - FIXED with black icon on gold */}
+        {/* Live Exchange Rate */}
         <div className="rounded-xl p-4 border mb-2" style={{ backgroundColor: 'var(--bg-card)', borderColor: 'var(--border)' }}>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-3">
@@ -182,16 +238,20 @@ export default function Dashboard() {
                 <TrendingUp size={18} className="text-[#1F1F1F]" />
               </div>
               <div>
-                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('liveExchangeRate')}</span>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>Live Exchange Rate</span>
                 <div className="flex items-center gap-2">
-                  <span className="font-bold" style={{ color: 'var(--text-primary)' }}>1 USDT = ₦{rate.toLocaleString()}</span>
+                  <span className="font-bold" style={{ color: 'var(--text-primary)' }}>
+                    1 USDT = {formatNGN(rate)}
+                  </span>
                   {rateLoading && <RefreshCw size={12} className="text-gray-400 animate-spin" />}
                 </div>
               </div>
             </div>
-           <span className="text-xs text-green-500 bg-green-500/10 px-2 py-1 rounded-full">
-  +0.2%
-</span>
+            
+            {/* Transparent percentage */}
+            <span className="text-xs px-2 py-1" style={{ color: percentChange > 0 ? '#10B981' : percentChange < 0 ? '#EF4444' : '#9CA3AF' }}>
+              {percentChange > 0 ? '+' : ''}{percentChange.toFixed(2)}%
+            </span>
           </div>
         </div>
 

@@ -1,116 +1,134 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Wallet, ChevronDown, AlertCircle, TrendingUp } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  ShoppingCart, 
+  TrendingUp, 
+  AlertCircle, 
+  Wallet,
+  RefreshCw
+} from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useExchangeRate } from '@/hooks/useExchangeRate';
+import { supabase } from '@/lib/supabase';
 
-export default function BuyCrypto() {
+export default function BuyPage() {
   const router = useRouter();
+  const { rate, loading, lastUpdated, source } = useExchangeRate();
   const [amount, setAmount] = useState('');
-  const [selectedCrypto, setSelectedCrypto] = useState('USDT');
-  const [step, setStep] = useState<'input' | 'review' | 'processing'>('input');
+  const [user, setUser] = useState<any>(null);
+  const [balance, setBalance] = useState<any>(null);
+  const [loadingUser, setLoadingUser] = useState(true);
+  const [processing, setProcessing] = useState(false);
 
-  const fiatBalance = 160000;
-  const exchangeRate = 1600;
-  const fee = 0.008; // 0.8%
+  useEffect(() => {
+    loadUserData();
+  }, []);
 
-  const amountNum = parseFloat(amount) || 0;
-  const cryptoAmount = amountNum / exchangeRate;
-  const feeAmount = amountNum * fee;
-  const totalAmount = amountNum + feeAmount;
+  const loadUserData = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push('/');
+        return;
+      }
+      setUser(user);
 
-  const cryptos = [
-    { id: 'USDT', name: 'Tether USD', symbol: 'USDT' },
-    { id: 'BTC', name: 'Bitcoin', symbol: 'BTC' },
-    { id: 'ETH', name: 'Ethereum', symbol: 'ETH' },
-    { id: 'SOL', name: 'Solana', symbol: 'SOL' }
-  ];
-
-  const handleContinue = () => {
-    if (amountNum > 0 && totalAmount <= fiatBalance) {
-      setStep('review');
+      const { data: balance } = await supabase
+        .from('balances')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      setBalance(balance);
+    } catch (error) {
+      console.error('Error loading user:', error);
+    } finally {
+      setLoadingUser(false);
     }
   };
 
-  const handleConfirm = () => {
-    setStep('processing');
-    // Simulate processing
-    setTimeout(() => {
-      alert('Purchase successful! (Demo)');
-      router.push('/dashboard');
-    }, 2000);
+  const amountNum = parseFloat(amount) || 0;
+  const cryptoAmount = amountNum / rate;
+  const fee = amountNum * 0.008;
+  const totalNairaNeeded = amountNum + fee;
+  const hasEnoughNaira = (balance?.ngn_balance || 0) >= totalNairaNeeded;
+
+  const handleBuy = async () => {
+    if (!hasEnoughNaira) return;
+    
+    setProcessing(true);
+
+    try {
+      // Deduct Naira, add USDT
+      const { error: balanceError } = await supabase
+        .from('balances')
+        .update({ 
+          ngn_balance: (balance?.ngn_balance || 0) - totalNairaNeeded,
+          usdt_balance: (balance?.usdt_balance || 0) + cryptoAmount
+        })
+        .eq('user_id', user.id);
+
+      if (balanceError) throw balanceError;
+
+      // Record transaction
+      const { error: txError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: user.id,
+          type: 'buy',
+          amount: cryptoAmount,
+          currency: 'USDT',
+          fiat_amount: amountNum,
+          fiat_currency: 'NGN',
+          fee: fee,
+          status: 'completed'
+        });
+
+      if (txError) throw txError;
+
+      // Create notification
+      await supabase
+        .from('notifications')
+        .insert({
+          user_id: user.id,
+          title: 'Purchase Successful',
+          message: `You bought ${cryptoAmount.toFixed(4)} USDT for ₦${amountNum.toLocaleString()}`,
+          read: false
+        });
+
+      toast.success(`✅ Purchased ${cryptoAmount.toFixed(4)} USDT`);
+      
+      // Refresh balance
+      const { data: newBalance } = await supabase
+        .from('balances')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      setBalance(newBalance);
+      setAmount('');
+
+    } catch (err: any) {
+      toast.error(err.message || 'Purchase failed');
+    } finally {
+      setProcessing(false);
+    }
   };
 
-  if (step === 'processing') {
+  if (loadingUser) {
     return (
-      <div className="min-h-screen bg-[#1F1F1F] flex flex-col">
-        <div className="flex-1 flex flex-col items-center justify-center p-6">
-          <div className="w-16 h-16 border-4 border-[#F6A100] border-t-transparent rounded-full animate-spin mb-6"></div>
-          <h1 className="text-2xl font-bold mb-2">Processing Purchase</h1>
-          <p className="text-gray-400 text-center">
-            Buying {cryptoAmount.toFixed(2)} {selectedCrypto}...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  if (step === 'review') {
-    return (
-      <div className="min-h-screen bg-[#1F1F1F]">
-        <div className="p-6 flex items-center gap-4 border-b border-gray-800">
-          <button onClick={() => setStep('input')}>
-            <ArrowLeft className="text-white" size={24} />
-          </button>
-          <h1 className="text-xl font-bold">Review Purchase</h1>
-        </div>
-
-        <div className="p-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-[#2C2C2C] rounded-2xl p-6 mb-6"
-          >
-            <div className="text-center mb-6">
-              <p className="text-gray-400 mb-2">You're buying</p>
-              <p className="text-4xl font-bold text-[#F6A100]">{cryptoAmount.toFixed(4)} {selectedCrypto}</p>
-            </div>
-
-            <div className="space-y-4">
-              <div className="flex justify-between py-3 border-b border-gray-700">
-                <span className="text-gray-400">Amount (NGN)</span>
-                <span className="text-white">₦{amountNum.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between py-3 border-b border-gray-700">
-                <span className="text-gray-400">Exchange Rate</span>
-                <span className="text-white">1 {selectedCrypto} = ₦{exchangeRate}</span>
-              </div>
-              <div className="flex justify-between py-3 border-b border-gray-700">
-                <span className="text-gray-400">Fee (0.8%)</span>
-                <span className="text-red-400">-₦{feeAmount.toLocaleString()}</span>
-              </div>
-              <div className="flex justify-between py-3">
-                <span className="text-gray-400">Total Deducted</span>
-                <span className="text-white font-bold text-xl">₦{totalAmount.toLocaleString()}</span>
-              </div>
-            </div>
-          </motion.div>
-
-          <motion.button
-            whileTap={{ scale: 0.95 }}
-            onClick={handleConfirm}
-            className="w-full bg-[#F6A100] text-[#1F1F1F] font-bold text-lg py-4 rounded-xl shadow-lg"
-          >
-            Confirm Purchase
-          </motion.button>
-        </div>
+      <div className="min-h-screen bg-[#1F1F1F] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F6A100]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#1F1F1F]">
+    <div className="min-h-screen bg-[#1F1F1F] pb-24">
       {/* Header */}
       <div className="p-6 flex items-center gap-4 border-b border-gray-800">
         <button onClick={() => router.back()}>
@@ -125,32 +143,43 @@ export default function BuyCrypto() {
           <div className="flex items-center gap-3">
             <Wallet className="text-[#F6A100]" size={20} />
             <div>
-              <p className="text-gray-400 text-sm">Fiat Balance</p>
-              <p className="text-white font-bold text-xl">₦{fiatBalance.toLocaleString()}</p>
+              <p className="text-gray-400 text-sm">Your Balances</p>
+              <div className="flex gap-4 mt-1">
+                <div>
+                  <span className="text-white font-bold text-xl">{balance?.usdt_balance?.toFixed(2) || 0}</span>
+                  <span className="text-[#F6A100] ml-1 text-sm">USDT</span>
+                </div>
+                <div>
+                  <span className="text-white font-bold text-xl">₦{balance?.ngn_balance?.toLocaleString() || 0}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Crypto Selection */}
-        <div className="mb-6">
-          <label className="text-gray-400 text-sm mb-2 block">Select Crypto</label>
-          <div className="relative">
-            <select
-              value={selectedCrypto}
-              onChange={(e) => setSelectedCrypto(e.target.value)}
-              className="w-full bg-[#2C2C2C] text-white rounded-xl p-4 appearance-none outline-none focus:ring-2 focus:ring-[#F6A100]"
-            >
-              {cryptos.map(crypto => (
-                <option key={crypto.id} value={crypto.id}>{crypto.name} ({crypto.symbol})</option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-4 top-4 text-gray-400" size={20} />
+        {/* Live Rate Display */}
+        <div className="bg-[#2C2C2C] rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="text-[#F6A100]" size={20} />
+            <div className="flex-1">
+              <div className="flex justify-between items-center">
+                <p className="text-gray-400 text-sm">Live Rate</p>
+                <div className="flex items-center gap-2">
+                  {loading && <RefreshCw size={12} className="text-gray-400 animate-spin" />}
+                  <span className="text-xs text-gray-500">
+                    {lastUpdated?.toLocaleTimeString() || '...'}
+                  </span>
+                </div>
+              </div>
+              <p className="text-white font-bold text-lg">1 USDT = ₦{rate.toLocaleString()}</p>
+              <p className="text-xs text-gray-500 mt-1">Source: {source} • Updates every 30s</p>
+            </div>
           </div>
         </div>
 
         {/* Amount Input */}
-        <div className="mb-6">
-          <label className="text-gray-400 text-sm mb-2 block">Amount (₦)</label>
+        <div className="mb-4">
+          <label className="text-gray-400 text-sm mb-2 block">Amount to spend (₦)</label>
           <input
             type="number"
             value={amount}
@@ -160,64 +189,75 @@ export default function BuyCrypto() {
           />
         </div>
 
-        {/* Live Conversion */}
+        {/* Live Preview */}
         {amountNum > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-[#2C2C2C] rounded-xl p-4 mb-6"
           >
-            <div className="flex justify-between items-center">
-              <span className="text-gray-400">You'll receive</span>
-              <span className="text-[#F6A100] font-bold text-xl">
-                {(amountNum / exchangeRate).toFixed(4)} {selectedCrypto}
-              </span>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-400">You'll receive</span>
+                <span className="text-[#F6A100] font-bold">{cryptoAmount.toFixed(4)} USDT</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Rate</span>
+                <span className="text-white">1 USDT = ₦{rate.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-400">Fee (0.8%)</span>
+                <span className="text-red-400">-₦{fee.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm pt-2 border-t border-gray-700">
+                <span className="text-gray-400">Total deducted</span>
+                <span className="text-white font-bold">₦{(amountNum + fee).toLocaleString()}</span>
+              </div>
             </div>
           </motion.div>
         )}
 
-        {/* Fee Preview */}
-        {amountNum > 0 && (
-          <div className="bg-[#2C2C2C] rounded-xl p-4 mb-6">
-            <div className="flex justify-between text-sm mb-2">
-              <span className="text-gray-400">Fee (0.8%)</span>
-              <span className="text-red-400">₦{(amountNum * fee).toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between font-bold">
-              <span className="text-gray-400">Total</span>
-              <span className="text-white">₦{(amountNum * (1 + fee)).toLocaleString()}</span>
-            </div>
-          </div>
-        )}
-
-        {/* Warning Notice */}
-        {amountNum > 0 && totalAmount > fiatBalance && (
-          <div className="bg-red-500 bg-opacity-10 border border-red-500 rounded-xl p-4 mb-8 flex gap-3">
+        {/* Insufficient Balance Warning */}
+        {amountNum > 0 && !hasEnoughNaira && (
+          <div className="bg-red-500 bg-opacity-10 border border-red-500 rounded-xl p-4 mb-6 flex gap-3">
             <AlertCircle className="text-red-500 flex-shrink-0" size={20} />
-            <p className="text-red-500 text-sm">
-              Insufficient balance. You need ₦{(totalAmount - fiatBalance).toLocaleString()} more.
-            </p>
+            <div>
+              <p className="text-red-500 font-medium">Insufficient Balance</p>
+              <p className="text-red-400 text-sm mt-1">
+                You need ₦{(totalNairaNeeded - (balance?.ngn_balance || 0)).toLocaleString()} more.
+              </p>
+            </div>
           </div>
         )}
 
-        {/* Continue Button */}
-        <motion.button
-          whileTap={{ scale: 0.95 }}
-          onClick={handleContinue}
-          disabled={!amountNum || totalAmount > fiatBalance}
-          className={`w-full py-4 rounded-xl font-bold text-lg ${
-            amountNum && totalAmount <= fiatBalance
-              ? 'bg-[#F6A100] text-[#1F1F1F]'
+        {/* Buy Button */}
+        <button
+          onClick={handleBuy}
+          disabled={!amountNum || !hasEnoughNaira || processing}
+          className={`w-full py-4 rounded-xl font-bold text-lg flex items-center justify-center gap-2 ${
+            amountNum && hasEnoughNaira && !processing
+              ? 'bg-[#F6A100] text-[#1F1F1F] hover:bg-opacity-90' 
               : 'bg-gray-700 text-gray-400 cursor-not-allowed'
           }`}
         >
-          Continue
-        </motion.button>
+          {processing ? (
+            <>
+              <RefreshCw size={20} className="animate-spin" />
+              Processing...
+            </>
+          ) : (
+            <>
+              <ShoppingCart size={20} />
+              Buy Crypto
+            </>
+          )}
+        </button>
 
-        {/* Rate Info */}
-        <div className="mt-6 flex items-center justify-center gap-2 text-sm text-gray-400">
-          <TrendingUp size={16} />
-          <span>1 {selectedCrypto} = ₦{exchangeRate}</span>
+        {/* Info Note */}
+        <div className="mt-6 text-center">
+          <p className="text-xs text-gray-500">
+            Rate updates every 30 seconds. Final rate at time of purchase.
+          </p>
         </div>
       </div>
     </div>

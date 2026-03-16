@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Mail, Lock, User, Chrome, Send, Eye, EyeOff } from 'lucide-react';
+import { Mail, Lock, User, Chrome, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
@@ -14,86 +14,40 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
-    setSuccess('');
 
     try {
       if (isLogin) {
-        // LOGIN
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
-        
         if (error) throw error;
-        
-        if (data.user) {
-          setSuccess('Login successful! Redirecting...');
-          setTimeout(() => router.push('/dashboard'), 1000);
-        }
+        if (data.user) router.push('/dashboard');
       } else {
-        // SIGN UP
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
-          options: {
-            data: {
-              full_name: fullName
-            }
-          }
+          options: { data: { full_name: fullName } }
         });
-        
         if (error) throw error;
-        
         if (data.user) {
-          setSuccess('Account created! Redirecting...');
-          
-          // Try to create profile, but don't block if it fails
-          try {
-            const { error: profileError } = await supabase
-              .from('profiles')
-              .insert([
-                { 
-                  id: data.user.id, 
-                  email: data.user.email,
-                  full_name: fullName 
-                }
-              ]);
-              
-            if (profileError) {
-              console.log('Profile insert error (non-critical):', profileError);
-            }
-          } catch (profileErr) {
-            console.log('Profile creation skipped:', profileErr);
-          }
-          
-          // Try to create balance, but don't block if it fails
-          try {
-            const { error: balanceError } = await supabase
-              .from('balances')
-              .insert([
-                { 
-                  user_id: data.user.id,
-                  usdt_balance: 0,
-                  ngn_balance: 0
-                }
-              ]);
-              
-            if (balanceError) {
-              console.log('Balance insert error (non-critical):', balanceError);
-            }
-          } catch (balanceErr) {
-            console.log('Balance creation skipped:', balanceErr);
-          }
-          
-          // Redirect to dashboard regardless of profile/balance creation
-          setTimeout(() => router.push('/dashboard'), 1500);
+          await supabase.from('profiles').insert([{ 
+            id: data.user.id, 
+            email, 
+            full_name: fullName 
+          }]);
+          await supabase.from('balances').insert([{ 
+            user_id: data.user.id,
+            usdt_balance: 0,
+            ngn_balance: 0
+          }]);
+          router.push('/dashboard');
         }
       }
     } catch (err: any) {
@@ -103,14 +57,17 @@ export default function LoginPage() {
     }
   };
 
+  const handleGoogleLogin = async () => {
+    window.location.href = '/api/auth/google';
+  };
+
   return (
     <div className="min-h-screen bg-[#1F1F1F] flex flex-col p-6">
       <motion.div 
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex-1 flex flex-col justify-center"
+        className="flex-1 flex flex-col justify-center max-w-md mx-auto w-full"
       >
-        {/* Logo */}
         <div className="text-center mb-12">
           <h1 className="text-5xl font-bold mb-3">
             <span className="text-white">Zuma</span>
@@ -121,26 +78,17 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Success Message */}
-        {success && (
-          <div className="bg-green-500 bg-opacity-10 border border-green-500 rounded-xl p-4 mb-4">
-            <p className="text-green-500 text-sm">{success}</p>
-          </div>
-        )}
-
-        {/* Error Message */}
         {error && (
           <div className="bg-red-500 bg-opacity-10 border border-red-500 rounded-xl p-4 mb-4">
             <p className="text-red-500 text-sm">{error}</p>
           </div>
         )}
 
-        {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && (
-            <div className="space-y-2">
+            <div>
               <label className="text-gray-400 text-sm">Full Name</label>
-              <div className="relative">
+              <div className="relative mt-1">
                 <User className="absolute left-4 top-4 text-gray-400" size={20} />
                 <input
                   type="text"
@@ -148,15 +96,15 @@ export default function LoginPage() {
                   onChange={(e) => setFullName(e.target.value)}
                   placeholder="John Doe"
                   className="w-full bg-[#2C2C2C] text-white rounded-xl p-4 pl-12 outline-none focus:ring-2 focus:ring-[#F6A100]"
-                  required={!isLogin}
+                  required
                 />
               </div>
             </div>
           )}
 
-          <div className="space-y-2">
+          <div>
             <label className="text-gray-400 text-sm">Email</label>
-            <div className="relative">
+            <div className="relative mt-1">
               <Mail className="absolute left-4 top-4 text-gray-400" size={20} />
               <input
                 type="email"
@@ -169,9 +117,9 @@ export default function LoginPage() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div>
             <label className="text-gray-400 text-sm">Password</label>
-            <div className="relative">
+            <div className="relative mt-1">
               <Lock className="absolute left-4 top-4 text-gray-400" size={20} />
               <input
                 type={showPassword ? "text" : "password"}
@@ -180,7 +128,6 @@ export default function LoginPage() {
                 placeholder="••••••••"
                 className="w-full bg-[#2C2C2C] text-white rounded-xl p-4 pl-12 pr-12 outline-none focus:ring-2 focus:ring-[#F6A100]"
                 required
-                minLength={6}
               />
               <button
                 type="button"
@@ -190,57 +137,34 @@ export default function LoginPage() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            {!isLogin && (
-              <p className="text-gray-500 text-xs mt-1">Password must be at least 6 characters</p>
-            )}
           </div>
 
           <motion.button
             whileTap={{ scale: 0.95 }}
             type="submit"
             disabled={loading}
-            className={`w-full bg-[#F6A100] text-[#1F1F1F] font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-opacity-90 transition-all ${
-              loading ? 'opacity-50 cursor-not-allowed' : ''
-            }`}
+            className="w-full bg-[#F6A100] text-[#1F1F1F] font-bold text-lg py-4 rounded-xl shadow-lg hover:bg-opacity-90 transition-all disabled:opacity-50"
           >
             {loading ? 'Processing...' : (isLogin ? 'Log In' : 'Create Account')}
           </motion.button>
         </form>
 
-        {/* Divider */}
         <div className="flex items-center my-8">
           <div className="flex-1 h-px bg-gray-700"></div>
-          <span className="px-4 text-gray-500">or continue with</span>
+          <span className="px-4 text-gray-500">or</span>
           <div className="flex-1 h-px bg-gray-700"></div>
         </div>
 
-        {/* Social Login */}
         <div className="space-y-3">
-          <button 
-            onClick={() => {
-              setLoading(true);
-              setError('Google login coming soon!');
-              setLoading(false);
-            }}
+          <button
+            onClick={handleGoogleLogin}
             className="w-full bg-white text-black rounded-xl p-4 flex items-center justify-center gap-3 font-medium hover:bg-opacity-90 transition-all"
           >
             <Chrome size={20} />
-            Google
-          </button>
-          <button 
-            onClick={() => {
-              setLoading(true);
-              setError('Telegram login coming soon!');
-              setLoading(false);
-            }}
-            className="w-full bg-[#0088cc] text-white rounded-xl p-4 flex items-center justify-center gap-3 font-medium hover:bg-opacity-90 transition-all"
-          >
-            <Send size={20} />
-            Telegram
+            Continue with Google
           </button>
         </div>
 
-        {/* Toggle */}
         <p className="text-center mt-8 text-gray-400">
           {isLogin ? "Don't have an account? " : "Already have an account? "}
           <button
@@ -251,7 +175,6 @@ export default function LoginPage() {
           </button>
         </p>
 
-        {/* Terms */}
         <p className="text-center mt-8 text-xs text-gray-500">
           By continuing, you agree to our Terms & Privacy Policy
         </p>
