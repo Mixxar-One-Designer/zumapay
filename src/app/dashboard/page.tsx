@@ -4,7 +4,6 @@ import { formatUSDT, formatNGN } from '@/lib/format';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
-  Bell, 
   User, 
   TrendingUp,
   RefreshCw,
@@ -23,6 +22,7 @@ import { supabase } from '@/lib/supabase';
 import { useExchangeRate } from '../../hooks/useExchangeRate';
 import { generateUserAddresses } from '@/lib/walletGenerator';
 import { useTranslation } from '@/hooks/useTranslation';
+import BellIcon from '../components/BellIcon';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -43,14 +43,13 @@ export default function Dashboard() {
     checkUser();
   }, []);
 
-  // AUTO-REFRESH BALANCE EVERY 30 SECONDS (not every render)
+  // AUTO-REFRESH BALANCE EVERY 30 SECONDS
   useEffect(() => {
     if (!user) return;
     
     let mounted = true;
     
     const refreshBalance = async () => {
-      // Only refresh if at least 30 seconds have passed
       if (Date.now() - lastBalanceUpdate.current < 29000) return;
       
       const { data: freshBalance } = await supabase
@@ -65,7 +64,6 @@ export default function Dashboard() {
       }
     };
     
-    // Initial refresh
     refreshBalance();
     
     const interval = setInterval(refreshBalance, 30000);
@@ -169,19 +167,17 @@ export default function Dashboard() {
               <Wallet className="text-[#1F1F1F]" size={24} />
             </div>
             <span className="text-2xl font-bold" style={{ color: 'var(--text-primary)' }}>
-              <span style={{ color: 'var(--text-primary)' }}>Zuma</span>
+              <span>Zuma</span>
               <span className="text-[#F6A100]">Pay</span>
             </span>
           </div>
           <div className="flex items-center gap-4">
-            <button onClick={() => router.push('/notifications')}>
-              <Bell style={{ color: 'var(--text-secondary)' }} size={20} />
-            </button>
+            {user && <BellIcon userId={user.id} />}
             <button onClick={() => router.push('/profile')}>
-              <User style={{ color: 'var(--text-secondary)' }} size={20} />
+              <User className="text-gray-400 hover:text-[#F6A100]" size={20} />
             </button>
             <button onClick={handleLogout}>
-              <LogOut style={{ color: 'var(--text-secondary)' }} size={20} />
+              <LogOut className="text-gray-400 hover:text-red-500" size={20} />
             </button>
           </div>
         </div>

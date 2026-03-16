@@ -18,24 +18,27 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem('theme') as Theme | null;
     if (saved) {
       setTheme(saved);
+      applyTheme(saved);
     }
   }, []);
 
-  useEffect(() => {
+  const applyTheme = (newTheme: Theme) => {
     const root = document.documentElement;
-    if (theme === 'light') {
+    if (newTheme === 'light') {
       root.classList.add('light');
     } else {
       root.classList.remove('light');
     }
-    localStorage.setItem('theme', theme);
-    
-    // Force all pages to update by dispatching a custom event
-    window.dispatchEvent(new Event('themeChange'));
-  }, [theme]);
+  };
+
+  const handleSetTheme = (newTheme: Theme) => {
+    setTheme(newTheme);
+    localStorage.setItem('theme', newTheme);
+    applyTheme(newTheme);
+  };
 
   return (
-    <ThemeContext.Provider value={{ theme, setTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme: handleSetTheme }}>
       {children}
     </ThemeContext.Provider>
   );

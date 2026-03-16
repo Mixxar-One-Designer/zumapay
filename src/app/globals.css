@@ -1,41 +1,40 @@
 @import "tailwindcss";
 
 :root {
-  --bg-primary: #1F1F1F;
-  --bg-card: #2C2C2C;
-  --text-primary: #ffffff;
+  --background: #1F1F1F;
+  --foreground: #ffffff;
+  --card-bg: #2C2C2C;
+  --border-color: #374151;
+  --accent: #F6A100;
   --text-secondary: #9CA3AF;
-  --border: #374151;
 }
 
 :root.light {
-  --bg-primary: #F8F9FA;
-  --bg-card: #FFFFFF;
-  --text-primary: #1F2A3A;
+  --background: #F8F9FA;
+  --foreground: #1F2A3A;
+  --card-bg: #FFFFFF;
+  --border-color: #E9ECF0;
+  --accent: #F6A100;
   --text-secondary: #6B7280;
-  --border: #E9ECF0;
+}
+
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 
 body {
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-  margin: 0;
-  padding: 0;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-poppins), system-ui, sans-serif;
   min-height: 100vh;
 }
 
-/* Override all hardcoded colors */
 .bg-\[\#1F1F1F\] {
-  background-color: var(--bg-primary) !important;
+  background-color: var(--background) !important;
 }
 
 .bg-\[\#2C2C2C\] {
-  background-color: var(--bg-card) !important;
-}
-
-.text-white {
-  color: var(--text-primary) !important;
+  background-color: var(--card-bg) !important;
 }
 
 .text-gray-400 {
@@ -43,10 +42,9 @@ body {
 }
 
 .border-gray-800 {
-  border-color: var(--border) !important;
+  border-color: var(--border-color) !important;
 }
 
-.fixed.bottom-0 {
-  background-color: var(--bg-card) !important;
-  border-color: var(--border) !important;
+.text-white {
+  color: var(--foreground) !important;
 }
