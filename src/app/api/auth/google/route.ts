@@ -26,10 +26,14 @@ export async function GET() {
     }
   )
   
+  // Get the base URL from environment or request
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000');
+  
   const { data } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback`,
+      redirectTo: `${baseUrl}/auth/callback`,
     },
   })
 
@@ -37,5 +41,5 @@ export async function GET() {
     return NextResponse.redirect(data.url)
   }
 
-  return NextResponse.redirect(new URL('/login?error=oauth_failed', process.env.NEXT_PUBLIC_APP_URL))
+  return NextResponse.redirect(new URL('/login?error=oauth_failed', baseUrl))
 }
