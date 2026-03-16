@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Clock, ArrowUp, ArrowDown, RefreshCw } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -40,7 +40,8 @@ type Transaction = (RegularTransaction | WithdrawalTransaction) & {
   currency?: string;
 };
 
-export default function HistoryPage() {
+// Main component that uses useSearchParams
+function HistoryContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const refreshTrigger = searchParams?.get('t');
@@ -75,9 +76,6 @@ export default function HistoryPage() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      console.log('Regular transactions:', regularTxs);
-      console.log('Withdrawals:', withdrawals);
-
       // Combine and sort by date
       const allTxs: Transaction[] = [
         ...(regularTxs || []).map(tx => ({ ...tx, type: tx.type })),
@@ -91,7 +89,6 @@ export default function HistoryPage() {
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       );
 
-      console.log('Combined transactions:', allTxs);
       setTransactions(allTxs);
     } catch (error) {
       console.error('Error loading transactions:', error);
@@ -256,5 +253,18 @@ export default function HistoryPage() {
         )}
       </div>
     </div>
+  );
+}
+
+// Wrap with Suspense
+export default function HistoryPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-primary)' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#F6A100]"></div>
+      </div>
+    }>
+      <HistoryContent />
+    </Suspense>
   );
 }
