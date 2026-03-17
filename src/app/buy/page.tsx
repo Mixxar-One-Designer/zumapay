@@ -14,6 +14,7 @@ import {
 import toast from 'react-hot-toast';
 import { useExchangeRate } from '@/hooks/useExchangeRate';
 import { supabase } from '@/lib/supabase';
+import { formatUSDT, formatNGN } from '@/lib/format';
 
 export default function BuyPage() {
   const router = useRouter();
@@ -96,11 +97,11 @@ export default function BuyPage() {
         .insert({
           user_id: user.id,
           title: 'Purchase Successful',
-          message: `You bought ${cryptoAmount.toFixed(4)} USDT for ₦${amountNum.toLocaleString()}`,
+          message: `You bought ${formatUSDT(cryptoAmount)} USDT for ${formatNGN(amountNum)}`,
           read: false
         });
 
-      toast.success(`✅ Purchased ${cryptoAmount.toFixed(4)} USDT`);
+      toast.success(`✅ Purchased ${formatUSDT(cryptoAmount)} USDT`);
       
       // Refresh balance
       const { data: newBalance } = await supabase
@@ -146,11 +147,11 @@ export default function BuyPage() {
               <p className="text-gray-400 text-sm">Your Balances</p>
               <div className="flex gap-4 mt-1">
                 <div>
-                  <span className="text-white font-bold text-xl">{balance?.usdt_balance?.toFixed(2) || 0}</span>
+                  <span className="text-white font-bold text-xl">{formatUSDT(balance?.usdt_balance || 0)}</span>
                   <span className="text-[#F6A100] ml-1 text-sm">USDT</span>
                 </div>
                 <div>
-                  <span className="text-white font-bold text-xl">₦{balance?.ngn_balance?.toLocaleString() || 0}</span>
+                  <span className="text-white font-bold text-xl">{formatNGN(balance?.ngn_balance || 0)}</span>
                 </div>
               </div>
             </div>
@@ -171,7 +172,7 @@ export default function BuyPage() {
                   </span>
                 </div>
               </div>
-              <p className="text-white font-bold text-lg">1 USDT = ₦{rate.toLocaleString()}</p>
+              <p className="text-white font-bold text-lg">1 USDT = {formatNGN(rate)}</p>
               <p className="text-xs text-gray-500 mt-1">Source: {source} • Updates every 30s</p>
             </div>
           </div>
@@ -199,19 +200,19 @@ export default function BuyPage() {
             <div className="space-y-2">
               <div className="flex justify-between items-center">
                 <span className="text-gray-400">You'll receive</span>
-                <span className="text-[#F6A100] font-bold">{cryptoAmount.toFixed(4)} USDT</span>
+                <span className="text-[#F6A100] font-bold">{formatUSDT(cryptoAmount)} USDT</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Rate</span>
-                <span className="text-white">1 USDT = ₦{rate.toLocaleString()}</span>
+                <span className="text-white">1 USDT = {formatNGN(rate)}</span>
               </div>
               <div className="flex justify-between text-sm">
                 <span className="text-gray-400">Fee (0.8%)</span>
-                <span className="text-red-400">-₦{fee.toLocaleString()}</span>
+                <span className="text-red-400">-{formatNGN(fee)}</span>
               </div>
               <div className="flex justify-between text-sm pt-2 border-t border-gray-700">
                 <span className="text-gray-400">Total deducted</span>
-                <span className="text-white font-bold">₦{(amountNum + fee).toLocaleString()}</span>
+                <span className="text-white font-bold">{formatNGN(amountNum + fee)}</span>
               </div>
             </div>
           </motion.div>
@@ -224,7 +225,7 @@ export default function BuyPage() {
             <div>
               <p className="text-red-500 font-medium">Insufficient Balance</p>
               <p className="text-red-400 text-sm mt-1">
-                You need ₦{(totalNairaNeeded - (balance?.ngn_balance || 0)).toLocaleString()} more.
+                You need {formatNGN(totalNairaNeeded - (balance?.ngn_balance || 0))} more.
               </p>
             </div>
           </div>

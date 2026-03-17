@@ -73,10 +73,23 @@ export async function confirmRealDeposits() {
             amount: tx.amount
           });
           
+          // Mark as completed
           await supabase
             .from('crypto_transactions')
             .update({ status: 'completed' })
             .eq('id', tx.id);
+            
+          // CREATE NOTIFICATION FOR DEPOSIT
+          await supabase
+            .from('notifications')
+            .insert({
+              user_id: tx.user_id,
+              title: 'Deposit Received',
+              message: `${tx.amount} USDT has been credited to your account`,
+              read: false
+            });
+            
+          console.log(`📨 Notification created for user ${tx.user_id}`);
         }
       }
     }

@@ -19,7 +19,7 @@ import { formatUSDT, formatNGN } from '@/lib/format';
 
 export default function Convert() {
   const router = useRouter();
-  const { rate, percentChange, loading, lastUpdated, source } = useExchangeRate();
+  const { rate, loading, lastUpdated, source, percentChange } = useExchangeRate();
   const [direction, setDirection] = useState<'toCrypto' | 'toFiat'>('toCrypto');
   const [amount, setAmount] = useState('');
   const [user, setUser] = useState<any>(null);
@@ -79,6 +79,7 @@ export default function Convert() {
 
     try {
       if (direction === 'toCrypto') {
+        // NGN → USDT
         const { error: balanceError } = await supabase
           .from('balances')
           .update({ 
@@ -100,9 +101,18 @@ export default function Convert() {
           status: 'completed'
         });
 
+        // Create notification
+        await supabase.from('notifications').insert({
+          user_id: user.id,
+          title: 'Conversion Successful',
+          message: `Converted ${formatNGN(fromAmount)} → ${formatUSDT(cryptoAmount)} USDT`,
+          read: false
+        });
+
         toast.success(`✅ Converted ${formatNGN(fromAmount)} → ${formatUSDT(cryptoAmount)} USDT`);
 
       } else {
+        // USDT → NGN
         const nairaReceived = nairaAmount - fee;
         
         const { error: balanceError } = await supabase
@@ -124,6 +134,14 @@ export default function Convert() {
           to_currency: 'NGN',
           fee: fee,
           status: 'completed'
+        });
+
+        // Create notification
+        await supabase.from('notifications').insert({
+          user_id: user.id,
+          title: 'Conversion Successful',
+          message: `Converted ${formatUSDT(fromAmount)} USDT → ${formatNGN(nairaReceived)}`,
+          read: false
         });
 
         toast.success(`✅ Converted ${formatUSDT(fromAmount)} USDT → ${formatNGN(nairaReceived)}`);
@@ -204,28 +222,29 @@ export default function Convert() {
         </div>
 
         {/* Live Rate Display */}
-<div className="bg-[#2C2C2C] rounded-xl p-4 mb-6">
-  <div className="flex items-center gap-3">
-    <TrendingUp className="text-[#F6A100]" size={20} />
-    <div className="flex-1">
-      <div className="flex justify-between items-center">
-        <p className="text-gray-400 text-sm">Live Rate</p>
-        <div className="flex items-center gap-2">
-          {loading && <RefreshCw size={12} className="text-gray-400 animate-spin" />}
-          <span className="text-xs text-gray-500">
-            {lastUpdated?.toLocaleTimeString() || '...'}
-          </span>
-          {/* SIMPLE TRANSPARENT BOX - NO BACKGROUND */}
-          <span className="text-xs px-2 py-1" style={{ color: percentChange > 0 ? '#10B981' : percentChange < 0 ? '#EF4444' : '#9CA3AF' }}>
-            {percentChange > 0 ? '+' : ''}{percentChange.toFixed(2)}%
-          </span>
+        <div className="bg-[#2C2C2C] rounded-xl p-4 mb-6">
+          <div className="flex items-center gap-3">
+            <TrendingUp className="text-[#F6A100]" size={20} />
+            <div className="flex-1">
+              <div className="flex justify-between items-center">
+                <p className="text-gray-400 text-sm">Live Rate</p>
+                <div className="flex items-center gap-2">
+                  {loading && <RefreshCw size={12} className="text-gray-400 animate-spin" />}
+                  <span className="text-xs text-gray-500">
+                    {lastUpdated?.toLocaleTimeString() || '...'}
+                  </span>
+                  <span className="text-xs px-2 py-1" style={{ 
+  color: percentChange > 0 ? '#10B981' : percentChange < 0 ? '#EF4444' : '#9CA3AF' 
+}}>
+  {percentChange > 0 ? '+' : ''}{percentChange.toFixed(2)}%
+</span>
+                </div>
+              </div>
+              <p className="text-white font-bold text-lg">1 USDT = {formatNGN(rate)}</p>
+              <p className="text-xs text-gray-500 mt-1">Source: {source} • Updates every 30s</p>
+            </div>
+          </div>
         </div>
-      </div>
-      <p className="text-white font-bold text-lg">1 USDT = ₦{rate.toLocaleString()}</p>
-      <p className="text-xs text-gray-500 mt-1">Source: {source} • Updates every 30s</p>
-    </div>
-  </div>
-</div>
 
         {/* Amount Input */}
         <div className="mb-4">

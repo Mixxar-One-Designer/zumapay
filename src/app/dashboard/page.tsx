@@ -172,7 +172,7 @@ export default function Dashboard() {
             </span>
           </div>
           <div className="flex items-center gap-4">
-            {user && <BellIcon userId={user.id} />}
+            {user && <BellIcon />}
             <button onClick={() => router.push('/profile')}>
               <User className="text-gray-400 hover:text-[#F6A100]" size={20} />
             </button>

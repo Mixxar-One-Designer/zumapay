@@ -106,7 +106,6 @@ export default function WithdrawCash() {
     try {
       toast.loading('Processing withdrawal...', { id: 'withdraw' });
       
-      // Log the withdrawal attempt
       console.log('Processing withdrawal:', {
         amount: amountNum,
         bank: selectedBank,
